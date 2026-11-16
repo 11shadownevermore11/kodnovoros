@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.venv/
+backend/kod.db
+backend/media/*
+!backend/media/.gitkeep
+web/node_modules/
+mobile/.gradle/
+mobile/build/
+mobile/app/build/
+mobile/local.properties
+.idea/
+*.iml
+.env
+cloudflared
+cloudflared.exe

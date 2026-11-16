@@ -1,0 +1,1 @@
+import{j as n,q as s,L as t}from"./index-DPetdeTW.js";function i(){return n.jsx("div",{className:"container page",children:n.jsxs(s,{icon:"map-pin",title:"Такой страницы нет",children:["Возможно, адрес изменился. Начните с карты или каталога.",n.jsx(t,{to:"/",className:"btn primary",children:"На главную"})]})})}export{i as default};

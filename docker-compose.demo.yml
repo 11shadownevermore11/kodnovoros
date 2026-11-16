@@ -1,0 +1,17 @@
+# Separate project and volumes. Use only for a local presentation.
+services:
+  kod:
+    environment:
+      DEMO_MODE: "true"
+  bizboard:
+    environment:
+      ENV: demo
+      BIZBOARD_DEMO: "true"
+      DEBUG: "false"
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_BOT_USERNAME: ""
+      SUPERADMIN_TELEGRAM_ID: ""
+      SUPERADMIN_PHONE: ""
+    command: >-
+      sh -c "alembic upgrade head && python -m app.seed && python -m scripts.seed_demo &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"

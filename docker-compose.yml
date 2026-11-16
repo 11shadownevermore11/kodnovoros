@@ -1,0 +1,80 @@
+services:
+  kod:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "${PORTAL_BIND:-127.0.0.1}:8000:8000"
+    environment:
+      DEMO_MODE: ${PORTAL_DEMO_MODE:-false}
+      SECRET_KEY: ${PORTAL_SECRET_KEY:-kod-local-change-before-publishing-32}
+      SITE_URL: ${SITE_URL:-http://localhost:8000}
+      BIZBOARD_URL: http://bizboard:8000
+      GIGACHAT_AUTH_KEY: ${GIGACHAT_AUTH_KEY:-}
+    volumes:
+      - kod-data:/data
+    depends_on:
+      bizboard:
+        condition: service_healthy
+
+  bizboard:
+    build: ./bizboard
+    environment:
+      ENV: ${BIZBOARD_ENV:-production}
+      DEBUG: "false"
+      SECRET_KEY: ${BIZBOARD_SECRET_KEY:-bizboard-local-change-before-publishing-32}
+      DATABASE_URL: postgresql+asyncpg://bizboard:${POSTGRES_PASSWORD:-bizboard_local}@postgres:5432/bizboard
+      REDIS_URL: redis://redis:6379/0
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      SUPERADMIN_TELEGRAM_ID: ${SUPERADMIN_TELEGRAM_ID:-}
+      SUPERADMIN_PHONE: ${SUPERADMIN_PHONE:-}
+      CORS_ORIGINS: ${SITE_URL:-http://localhost:8000}
+    volumes:
+      - biz-media:/app/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >-
+      sh -c "alembic upgrade head && python -m app.seed &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+      POSTGRES_DB: bizboard
+      POSTGRES_USER: bizboard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bizboard_local}
+    volumes:
+      - biz-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bizboard -d bizboard"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - biz-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  kod-data:
+  biz-media:
+  biz-pg:
+  biz-redis:
